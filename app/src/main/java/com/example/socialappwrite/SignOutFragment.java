@@ -29,5 +29,7 @@ public class SignOutFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         navController = Navigation.findNavController(view);  // <-----------------
+
+        Navigation.findNavController(view).navigate(R.id.signInFragment);
     }
 }

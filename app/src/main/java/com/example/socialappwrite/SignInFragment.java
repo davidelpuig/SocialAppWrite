@@ -86,7 +86,6 @@ public class SignInFragment extends Fragment {
             }
         });
 
-
     }
 
     private void accederConEmail() {
