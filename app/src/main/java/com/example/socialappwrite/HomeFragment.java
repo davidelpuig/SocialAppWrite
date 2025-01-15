@@ -7,6 +7,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.os.Handler;
 import android.os.Looper;
@@ -22,7 +23,9 @@ import com.google.android.material.navigation.NavigationView;
 import io.appwrite.Client;
 import io.appwrite.coroutines.CoroutineCallback;
 import io.appwrite.exceptions.AppwriteException;
+import io.appwrite.models.DocumentList;
 import io.appwrite.services.Account;
+import io.appwrite.services.Databases;
 
 
 public class HomeFragment extends Fragment {
@@ -31,6 +34,9 @@ public class HomeFragment extends Fragment {
 
     ImageView photoImageView;
     TextView displayNameTextView, emailTextView;
+
+    Client client;
+    Account account;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -51,10 +57,10 @@ public class HomeFragment extends Fragment {
         displayNameTextView = header.findViewById(R.id.displayNameTextView);
         emailTextView = header.findViewById(R.id.emailTextView);
 
-        Client client = new Client(requireContext())
+        client = new Client(requireContext())
                 .setProject("678510c0002fc68abafc"); // Your project ID
 
-        Account account = new Account(client);
+        account = new Account(client);
 
         Handler mainHandler = new Handler(Looper.getMainLooper());
 
@@ -70,6 +76,8 @@ public class HomeFragment extends Fragment {
                     displayNameTextView.setText(result.getName().toString());
                     emailTextView.setText(result.getEmail().toString());
                     Glide.with(requireView()).load(R.drawable.user).into(photoImageView);
+
+                    obtenerPosts();
                 });
 
             }));
@@ -83,5 +91,76 @@ public class HomeFragment extends Fragment {
                 navController.navigate(R.id.newPostFragment);
             }
         });
+    }
+
+    void obtenerPosts()
+    {
+        Databases databases = new Databases(client);
+
+        try {
+            databases.listDocuments(
+                    "[TU_DATABASE_ID]",
+                    "[TU_COLLECTION_ID]",
+                    new CoroutineCallback<DocumentList>() {
+                        @Override
+                        public void onComplete(DocumentList result) {
+                            // Procesar documentos
+                            result.getDocuments().forEach(document -> {
+                                System.out.println("Documento: " + document.getId());
+                            });
+
+                        }
+
+                        @Override
+                        public void onFailure(Throwable throwable) {
+                            System.err.println("Error: " + throwable.getMessage());
+                        }
+                    }
+            );
+
+            // Incrementar el offset
+        } catch (AppwriteException e) {
+            e.printStackTrace();
+        }
+    }
+
+    class PostViewHolder extends RecyclerView.ViewHolder{
+        ImageView authorPhotoImageView;
+        TextView authorTextView, contentTextView;
+
+        PostViewHolder(@NonNull View itemView) {
+            super(itemView);
+
+            authorPhotoImageView = itemView.findViewById(R.id.photoImageView);
+            authorTextView = itemView.findViewById(R.id.authorTextView);
+            contentTextView = itemView.findViewById(R.id.contentTextView);
+        }
+    }
+
+    class PostsAdapter extends RecyclerView.Adapter<PostViewHolder> {
+
+        @NonNull
+        @Override
+        public PostViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            return new PostViewHolder(LayoutInflater.from(parent.getContext()).inflate(R.layout.viewholder_post, parent, false));
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull PostViewHolder holder, int position) {
+            /*Glide.with(getContext()).load(post.authorPhotoUrl).circleCrop().into(holder.authorPhotoImageView);
+            holder.authorTextView.setText(post.author);
+            holder.contentTextView.setText(post.content);*/
+        }
+
+        @Override
+        public int getItemCount() {
+            return 0;
+        }
+
+        public void establecerLista()
+        {
+
+        }
+
     }
 }
