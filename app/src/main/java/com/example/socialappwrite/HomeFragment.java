@@ -76,5 +76,12 @@ public class HomeFragment extends Fragment {
         } catch (AppwriteException e) {
             throw new RuntimeException(e);
         }
+
+        view.findViewById(R.id.gotoNewPostFragmentButton).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                navController.navigate(R.id.newPostFragment);
+            }
+        });
     }
 }
