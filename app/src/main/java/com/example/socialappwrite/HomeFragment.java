@@ -19,6 +19,11 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.google.android.material.navigation.NavigationView;
+import com.google.android.material.snackbar.Snackbar;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import io.appwrite.Client;
 import io.appwrite.coroutines.CoroutineCallback;
@@ -38,6 +43,8 @@ public class HomeFragment extends Fragment {
     Client client;
     Account account;
 
+    PostsAdapter adapter;
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -56,6 +63,17 @@ public class HomeFragment extends Fragment {
         photoImageView = header.findViewById(R.id.imageView);
         displayNameTextView = header.findViewById(R.id.displayNameTextView);
         emailTextView = header.findViewById(R.id.emailTextView);
+
+        RecyclerView postsRecyclerView = view.findViewById(R.id.postsRecyclerView);
+        adapter = new PostsAdapter();
+        postsRecyclerView.setAdapter(adapter);
+
+        view.findViewById(R.id.gotoNewPostFragmentButton).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                navController.navigate(R.id.newPostFragment);
+            }
+        });
 
         client = new Client(requireContext())
                 .setProject("678510c0002fc68abafc"); // Your project ID
@@ -84,43 +102,31 @@ public class HomeFragment extends Fragment {
         } catch (AppwriteException e) {
             throw new RuntimeException(e);
         }
-
-        view.findViewById(R.id.gotoNewPostFragmentButton).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                navController.navigate(R.id.newPostFragment);
-            }
-        });
     }
 
     void obtenerPosts()
     {
         Databases databases = new Databases(client);
+        Handler mainHandler = new Handler(Looper.getMainLooper());
 
         try {
             databases.listDocuments(
-                    "[TU_DATABASE_ID]",
-                    "[TU_COLLECTION_ID]",
-                    new CoroutineCallback<DocumentList>() {
-                        @Override
-                        public void onComplete(DocumentList result) {
-                            // Procesar documentos
-                            result.getDocuments().forEach(document -> {
-                                System.out.println("Documento: " + document.getId());
-                            });
-
+                    "6787d4bf000332f623b9", // databaseId
+                    "6787d4ca000094d5bc19", // collectionId
+                    new ArrayList<>(), // queries (optional)
+                    new CoroutineCallback<>((result, error) -> {
+                        if (error != null) {
+                            Snackbar.make(requireView(), "Error al obtener los posts: " + error.toString(), Snackbar.LENGTH_LONG).show();
+                            return;
                         }
 
-                        @Override
-                        public void onFailure(Throwable throwable) {
-                            System.err.println("Error: " + throwable.getMessage());
-                        }
-                    }
+                        System.out.println( result.toString() );
+
+                        mainHandler.post(() -> adapter.establecerLista(result));
+                    })
             );
-
-            // Incrementar el offset
         } catch (AppwriteException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 
@@ -139,6 +145,8 @@ public class HomeFragment extends Fragment {
 
     class PostsAdapter extends RecyclerView.Adapter<PostViewHolder> {
 
+        DocumentList<Map<String,Object>> lista = null;
+
         @NonNull
         @Override
         public PostViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -147,19 +155,30 @@ public class HomeFragment extends Fragment {
 
         @Override
         public void onBindViewHolder(@NonNull PostViewHolder holder, int position) {
-            /*Glide.with(getContext()).load(post.authorPhotoUrl).circleCrop().into(holder.authorPhotoImageView);
-            holder.authorTextView.setText(post.author);
-            holder.contentTextView.setText(post.content);*/
+
+            Map<String,Object> post = lista.getDocuments().get(position).getData();
+
+            if (post.get("authorPhotoUrl") == null)
+            {
+                holder.authorPhotoImageView.setImageResource(R.drawable.user);
+            }
+            else
+            {
+                Glide.with(getContext()).load(post.get("authorPhotoUrl").toString()).circleCrop().into(holder.authorPhotoImageView);
+            }
+            holder.authorTextView.setText(post.get("author").toString());
+            holder.contentTextView.setText(post.get("content").toString());
         }
 
         @Override
         public int getItemCount() {
-            return 0;
+            return lista == null ? 0 : lista.getDocuments().size();
         }
 
-        public void establecerLista()
+        public void establecerLista(DocumentList<Map<String,Object>> lista)
         {
-
+            this.lista = lista;
+            notifyDataSetChanged();
         }
 
     }
