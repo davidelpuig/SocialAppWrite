@@ -48,7 +48,7 @@ public class ProfileFragment extends Fragment {
         emailTextView = view.findViewById(R.id.emailTextView);
 
         Client client = new Client(requireContext())
-                .setProject("678510c0002fc68abafc"); // Your project ID
+                .setProject(getString(R.string.APPWRITE_PROJECT_ID)); // Your project ID
 
         Account account = new Account(client);
 

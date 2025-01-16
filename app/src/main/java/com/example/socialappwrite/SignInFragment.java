@@ -49,7 +49,7 @@ public class SignInFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         client = new Client(requireActivity().getApplicationContext());
-        client.setProject("678510c0002fc68abafc");
+        client.setProject(getString(R.string.APPWRITE_PROJECT_ID));
 
         account = new Account(client);
         account.deleteSession(

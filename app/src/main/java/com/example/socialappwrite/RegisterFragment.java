@@ -68,7 +68,7 @@ public class RegisterFragment extends Fragment {
         registerButton.setEnabled(false);
 
         client = new Client(requireActivity().getApplicationContext());
-        client.setProject("678510c0002fc68abafc");
+        client.setProject(getString(R.string.APPWRITE_PROJECT_ID));
 
         Account account = new Account(client);
 

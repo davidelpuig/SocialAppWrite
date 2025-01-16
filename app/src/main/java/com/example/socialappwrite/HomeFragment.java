@@ -23,6 +23,7 @@ import com.google.android.material.snackbar.Snackbar;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import io.appwrite.Client;
@@ -42,6 +43,8 @@ public class HomeFragment extends Fragment {
 
     Client client;
     Account account;
+
+    String userId;
 
     PostsAdapter adapter;
 
@@ -76,7 +79,7 @@ public class HomeFragment extends Fragment {
         });
 
         client = new Client(requireContext())
-                .setProject("678510c0002fc68abafc"); // Your project ID
+                .setProject(getString(R.string.APPWRITE_PROJECT_ID)); // Your project ID
 
         account = new Account(client);
 
@@ -91,6 +94,7 @@ public class HomeFragment extends Fragment {
 
                 mainHandler.post(() ->
                 {
+                    userId = result.getId();
                     displayNameTextView.setText(result.getName().toString());
                     emailTextView.setText(result.getEmail().toString());
                     Glide.with(requireView()).load(R.drawable.user).into(photoImageView);
@@ -111,8 +115,8 @@ public class HomeFragment extends Fragment {
 
         try {
             databases.listDocuments(
-                    "6787d4bf000332f623b9", // databaseId
-                    "6787d4ca000094d5bc19", // collectionId
+                    getString(R.string.APPWRITE_DATABASE_ID), // databaseId
+                    getString(R.string.APPWRITE_POSTS_COLLECTION_ID), // collectionId
                     new ArrayList<>(), // queries (optional)
                     new CoroutineCallback<>((result, error) -> {
                         if (error != null) {
@@ -131,15 +135,17 @@ public class HomeFragment extends Fragment {
     }
 
     class PostViewHolder extends RecyclerView.ViewHolder{
-        ImageView authorPhotoImageView;
-        TextView authorTextView, contentTextView;
+        ImageView authorPhotoImageView, likeImageView;
+        TextView authorTextView, contentTextView, numLikesTextView;
 
         PostViewHolder(@NonNull View itemView) {
             super(itemView);
 
             authorPhotoImageView = itemView.findViewById(R.id.photoImageView);
+            likeImageView = itemView.findViewById(R.id.likeImageView);
             authorTextView = itemView.findViewById(R.id.authorTextView);
             contentTextView = itemView.findViewById(R.id.contentTextView);
+            numLikesTextView = itemView.findViewById(R.id.numLikesTextView);
         }
     }
 
@@ -168,6 +174,54 @@ public class HomeFragment extends Fragment {
             }
             holder.authorTextView.setText(post.get("author").toString());
             holder.contentTextView.setText(post.get("content").toString());
+
+            // Gestion de likes
+            List<String> likes = (List<String>) post.get("likes");
+            if(likes.contains(userId))
+                holder.likeImageView.setImageResource(R.drawable.like_on);
+            else
+                holder.likeImageView.setImageResource(R.drawable.like_off);
+
+            holder.numLikesTextView.setText(String.valueOf(likes.size()));
+
+            holder.likeImageView.setOnClickListener(view -> {
+
+                Databases databases = new Databases(client);
+                Handler mainHandler = new Handler(Looper.getMainLooper());
+                List<String> nuevosLikes = likes;
+
+                if(nuevosLikes.contains(userId))
+                    nuevosLikes.remove(userId);
+                else
+                    nuevosLikes.add(userId);
+
+                Map<String, Object> data = new HashMap<>();
+                data.put("likes", nuevosLikes);
+
+                try {
+                    databases.updateDocument(
+                            getString(R.string.APPWRITE_DATABASE_ID), // databaseId
+                            getString(R.string.APPWRITE_POSTS_COLLECTION_ID), // collectionId
+                            post.get("$id").toString(), // documentId
+                            data, // data (optional)
+                            new ArrayList<>(), // permissions (optional)
+                            new CoroutineCallback<>((result, error) -> {
+                                if (error != null) {
+                                    error.printStackTrace();
+                                    return;
+                                }
+
+                                System.out.println("Likes actualizados:" + result.toString());
+
+                                mainHandler.post(() -> obtenerPosts());
+                            })
+                    );
+                } catch (AppwriteException e) {
+                    throw new RuntimeException(e);
+                }
+
+            });
+
         }
 
         @Override

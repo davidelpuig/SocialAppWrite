@@ -55,7 +55,7 @@ public class NewPostFragment extends Fragment {
         navController = Navigation.findNavController(view);
 
         client = new Client(requireContext())
-                .setProject("678510c0002fc68abafc"); // Sustituye con tu Project ID
+                .setProject(getString(R.string.APPWRITE_PROJECT_ID)); // Sustituye con tu Project ID
 
 
         publishButton = view.findViewById(R.id.publishButton);
@@ -106,9 +106,6 @@ public class NewPostFragment extends Fragment {
         Databases databases = new Databases(client);
 
         // Datos del documento
-        String databaseId = "6787d4bf000332f623b9";
-        String collectionId = "6787d4ca000094d5bc19";
-        String documentId = "unique()"; // Usa 'unique()' para generar un ID único automáticamente
         Map<String, Object> data = new HashMap<>();
         data.put("uid", user.getId().toString());
         data.put("author", user.getName().toString());
@@ -118,9 +115,9 @@ public class NewPostFragment extends Fragment {
         // Crear el documento
         try {
             databases.createDocument(
-                    databaseId,
-                    collectionId,
-                    documentId,
+                    getString(R.string.APPWRITE_DATABASE_ID), // databaseId
+                    getString(R.string.APPWRITE_POSTS_COLLECTION_ID), // collectionId
+                    "unique()", // Usa 'unique()' para generar un ID único automáticamente
                     data,
                     new ArrayList<>(), // Permisos opcionales, como ["role:all"]
                     new CoroutineCallback<>((result, error) -> {
