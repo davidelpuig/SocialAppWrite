@@ -28,7 +28,7 @@ import io.appwrite.services.Account;
 public class RegisterFragment extends Fragment {
 
    NavController navController;
-    private EditText emailEditText, passwordEditText;
+    private EditText usernameEditText, emailEditText, passwordEditText;
     private Button registerButton;
 
     Client client;
@@ -46,6 +46,7 @@ public class RegisterFragment extends Fragment {
 
         navController = Navigation.findNavController(view);  // <-----------------
 
+        usernameEditText = view.findViewById(R.id.usernameEditText);
         emailEditText = view.findViewById(R.id.emailEditText);
         passwordEditText = view.findViewById(R.id.passwordEditText);
 
@@ -79,7 +80,7 @@ public class RegisterFragment extends Fragment {
                     "unique()", // userId
                     emailEditText.getText().toString(), // email
                     passwordEditText.getText().toString(), // password
-                    emailEditText.getText().toString(), // name (optional)
+                    usernameEditText.getText().toString(), // name (optional)
                     new CoroutineCallback<>((result, error) -> {
 
                         mainHandler.post(() ->  registerButton.setEnabled(true));

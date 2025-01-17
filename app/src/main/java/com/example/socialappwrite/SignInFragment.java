@@ -52,7 +52,7 @@ public class SignInFragment extends Fragment {
         client.setProject(getString(R.string.APPWRITE_PROJECT_ID));
 
         account = new Account(client);
-        account.deleteSession(
+        /*account.deleteSession(
                 "current", // sessionId
                 new CoroutineCallback<>((result, error) -> {
                     if (error != null) {
@@ -62,7 +62,8 @@ public class SignInFragment extends Fragment {
 
                     //Log.d("Appwrite", result.toString());
                 })
-        );
+        );*/
+
 
         navController = Navigation.findNavController(view);  // <-----------------
 
@@ -85,6 +86,21 @@ public class SignInFragment extends Fragment {
                 accederConEmail();
             }
         });
+
+        Handler mainHandler = new Handler(Looper.getMainLooper());
+        account.getSession(
+                "current", // sessionId
+                new CoroutineCallback<>((result, error) -> {
+                    if (error != null) {
+                        error.printStackTrace();
+                        return;
+                    }
+
+                    // Si ya estamos logeados, pasamos a Home
+                    if(result != null)
+                        mainHandler.post(() -> actualizarUI("Ok"));
+                })
+        );
 
     }
 

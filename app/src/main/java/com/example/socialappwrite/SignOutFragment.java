@@ -8,9 +8,15 @@ import androidx.fragment.app.Fragment;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+
+import io.appwrite.Client;
+import io.appwrite.coroutines.CoroutineCallback;
+import io.appwrite.services.Account;
 
 
 public class SignOutFragment extends Fragment {
@@ -30,6 +36,24 @@ public class SignOutFragment extends Fragment {
 
         navController = Navigation.findNavController(view);  // <-----------------
 
-        Navigation.findNavController(view).navigate(R.id.signInFragment);
+
+        Client client = new Client(requireActivity().getApplicationContext());
+        client.setProject(getString(R.string.APPWRITE_PROJECT_ID));
+
+        // Cerramos la sesión actual
+        Handler mainHandler = new Handler(Looper.getMainLooper());
+        Account account = new Account(client);
+        account.deleteSession(
+                "current", // sessionId
+                new CoroutineCallback<>((result, error) -> {
+                    if (error != null) {
+                        error.printStackTrace();
+                        return;
+                    }
+
+                    mainHandler.post(() -> Navigation.findNavController(view).navigate(R.id.signInFragment));
+                    //Log.d("Appwrite", result.toString());
+                })
+        );
     }
 }
