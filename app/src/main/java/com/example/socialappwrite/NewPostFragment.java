@@ -1,7 +1,9 @@
 package com.example.socialappwrite;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 
@@ -19,6 +21,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.MediaStore;
+import android.provider.OpenableColumns;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -31,7 +34,10 @@ import com.bumptech.glide.Glide;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -157,6 +163,7 @@ public class NewPostFragment extends Fragment {
         data.put("author", user.getName().toString());
         data.put("authorPhotoUrl", null);
         data.put("content", content);
+        data.put("mediaType", mediaTipo);
         data.put("mediaUrl", mediaUrl);
 
         // Crear el documento
@@ -190,12 +197,20 @@ public class NewPostFragment extends Fragment {
 
     private void pujaIguardarEnAppWrite(User<Map<String, Object>> user, final String postText)
     {
+        Handler mainHandler = new Handler(Looper.getMainLooper());
         Storage storage = new Storage(client);
+
+        File tempFile = null;
+        try {
+            tempFile = getFileFromUri(getContext(), mediaUri);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
 
         storage.createFile(
                 getString(R.string.APPWRITE_STORAGE_BUCKET_ID), // bucketId
                 "unique()", // fileId
-                InputFile.Companion.fromFile(new File(mediaUri.toString())), // file
+                InputFile.Companion.fromFile(tempFile), // file
                 new ArrayList<>(), // permissions (optional)
                 new CoroutineCallback<>((result, error) -> {
                     if (error != null) {
@@ -203,7 +218,11 @@ public class NewPostFragment extends Fragment {
                         return;
                     }
 
-                    System.out.println( result.toString() );
+                    String downloadUrl = "https://cloud.appwrite.io/v1/storage/buckets/" + getString(R.string.APPWRITE_STORAGE_BUCKET_ID) + "/files/" + result.getId() + "/view?project=" + getString(R.string.APPWRITE_PROJECT_ID) + "&project=" + getString(R.string.APPWRITE_PROJECT_ID) + "&mode=admin";
+                    mainHandler.post(() ->
+                    {
+                        guardarEnAppWrite(user, postText, downloadUrl);
+                    });
                 })
         );
     }
@@ -265,5 +284,42 @@ public class NewPostFragment extends Fragment {
     private void grabarAudio() {
         grabadoraAudio.launch(new
                 Intent(MediaStore.Audio.Media.RECORD_SOUND_ACTION));
+    }
+
+    public File getFileFromUri(Context context, Uri uri) throws Exception {
+        InputStream inputStream = context.getContentResolver().openInputStream(uri);
+
+        if (inputStream == null) {
+            throw new FileNotFoundException("No se pudo abrir el URI: " + uri);
+        }
+
+        String fileName = getFileName(context, uri);
+        File tempFile = new File(context.getCacheDir(), fileName);
+
+        FileOutputStream outputStream = new FileOutputStream(tempFile);
+        byte[] buffer = new byte[1024];
+        int length;
+
+        while ((length = inputStream.read(buffer)) > 0) {
+            outputStream.write(buffer, 0, length);
+        }
+
+        outputStream.close();
+        inputStream.close();
+
+        return tempFile;
+    }
+
+    private String getFileName(Context context, Uri uri) {
+        String fileName = "temp_file";
+        try (Cursor cursor = context.getContentResolver().query(uri, null, null, null, null)) {
+            if (cursor != null && cursor.moveToFirst()) {
+                int nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                if (nameIndex != -1) {
+                    fileName = cursor.getString(nameIndex);
+                }
+            }
+        }
+        return fileName;
     }
 }
