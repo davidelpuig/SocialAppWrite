@@ -90,7 +90,20 @@ public class RegisterFragment extends Fragment {
                             return;
                         }
 
-                        mainHandler.post(() ->  actualizarUI("Bien"));
+                        account.createEmailPasswordSession(
+                                emailEditText.getText().toString(), // email
+                                passwordEditText.getText().toString(), // password
+                                new CoroutineCallback<>((result2, error2) -> {
+                                    if (error2 != null) {
+                                        Snackbar.make(requireView(), "Error: " + error2.toString(), Snackbar.LENGTH_LONG).show();
+                                    }
+                                    else
+                                    {
+                                        System.out.println("Sesión creada para el usuario:" + result2.toString());
+                                        mainHandler.post(() -> actualizarUI("Ok"));
+                                    }
+                                })
+                        );
                     })
             );
         } catch (AppwriteException e) {
