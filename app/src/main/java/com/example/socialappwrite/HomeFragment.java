@@ -5,6 +5,7 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
@@ -31,6 +32,8 @@ import io.appwrite.Client;
 import io.appwrite.coroutines.CoroutineCallback;
 import io.appwrite.exceptions.AppwriteException;
 import io.appwrite.models.DocumentList;
+import io.appwrite.models.Session;
+import io.appwrite.models.User;
 import io.appwrite.services.Account;
 import io.appwrite.services.Databases;
 
@@ -86,9 +89,32 @@ public class HomeFragment extends Fragment {
 
         account = new Account(client);
 
-        Handler mainHandler = new Handler(Looper.getMainLooper());
+        //Handler mainHandler = new Handler(Looper.getMainLooper());
 
-        try {
+        appViewModel.userAccount.observe(getViewLifecycleOwner(), new Observer<User<Map<String,Object>>>() {
+                    @Override
+                    public void onChanged(User<Map<String, Object>> mapUser) {
+                        userId = mapUser.getId();
+                        displayNameTextView.setText(mapUser.getName());
+                        emailTextView.setText(mapUser.getEmail());
+                        //Glide.with(requireView()).load(R.drawable.user).into(photoImageView);
+
+                        obtenerPosts();
+                    }
+                }
+        );
+
+        appViewModel.userProfile.observe(getViewLifecycleOwner(), new Observer<Map<String, Object>>() {
+            @Override
+            public void onChanged(Map<String, Object> stringObjectMap) {
+                if(stringObjectMap.get("photoUrl") != null)
+                    Glide.with(requireView()).load(stringObjectMap.get("photoUrl").toString()).into(photoImageView);
+                else
+                    Glide.with(requireView()).load(R.drawable.user).into(photoImageView);
+            }
+        });
+
+        /*try {
             account.get(new CoroutineCallback<>((result, error) -> {
                 if (error != null) {
                     error.printStackTrace();
@@ -108,7 +134,7 @@ public class HomeFragment extends Fragment {
             }));
         } catch (AppwriteException e) {
             throw new RuntimeException(e);
-        }
+        }*/
     }
 
     void obtenerPosts()

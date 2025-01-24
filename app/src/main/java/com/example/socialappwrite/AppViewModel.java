@@ -9,6 +9,10 @@ import androidx.lifecycle.MutableLiveData;
 
 import java.util.Map;
 
+import io.appwrite.models.Session;
+import io.appwrite.models.User;
+import io.appwrite.services.Account;
+
 public class AppViewModel extends AndroidViewModel {
     public static class Media {
         public Uri uri;
@@ -22,6 +26,9 @@ public class AppViewModel extends AndroidViewModel {
             MutableLiveData<>();
     public MutableLiveData<Media> mediaSeleccionado = new
             MutableLiveData<>();
+    public MutableLiveData<User<Map<String,Object>>> userAccount = new MutableLiveData<>();
+    public MutableLiveData<Map<String, Object>> userProfile = new MutableLiveData<>();
+
     public AppViewModel(@NonNull Application application) {
         super(application);
     }

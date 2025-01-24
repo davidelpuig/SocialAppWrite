@@ -19,10 +19,15 @@ import android.widget.EditText;
 
 import com.google.android.material.snackbar.Snackbar;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
 import io.appwrite.Client;
 import io.appwrite.coroutines.CoroutineCallback;
 import io.appwrite.exceptions.AppwriteException;
 import io.appwrite.services.Account;
+import io.appwrite.services.Databases;
 
 
 public class RegisterFragment extends Fragment {
@@ -90,7 +95,47 @@ public class RegisterFragment extends Fragment {
                             return;
                         }
 
-                        mainHandler.post(() ->  actualizarUI("Bien"));
+                        mainHandler.post(() ->  createUserProfile(result.getId()));
+                    })
+            );
+        } catch (AppwriteException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void createUserProfile(String currentUser)
+    {
+        // Crear instancia del servicio Databases
+        Databases databases = new Databases(client);
+
+        // Datos del documento
+        Map<String, Object> data = new HashMap<>();
+        data.put("userId", currentUser);
+        data.put("photoUrl", null);
+
+        Handler mainHandler = new Handler(Looper.getMainLooper());
+
+        // Crear el documento
+        try {
+            databases.createDocument(
+                    getString(R.string.APPWRITE_DATABASE_ID), // databaseId
+                    getString(R.string.APPWRITE_PROFILES_COLLECTION_ID), // collectionId
+                    currentUser,
+                    data,
+                    new ArrayList<>(), // Permisos opcionales, como ["role:all"]
+                    new CoroutineCallback<>((result, error) -> {
+                        if (error != null) {
+                            Snackbar.make(requireView(), "Error: " + error.toString(), Snackbar.LENGTH_LONG).show();
+                        }
+                        else
+                        {
+                            System.out.println("Perfil creado:" + result.toString());
+                            mainHandler.post(() ->
+                            {
+                                actualizarUI(currentUser);
+                            });
+                        }
+
                     })
             );
         } catch (AppwriteException e) {
@@ -100,7 +145,8 @@ public class RegisterFragment extends Fragment {
 
     private void actualizarUI(String currentUser) {
         if(currentUser != null){
-            navController.navigate(R.id.homeFragment);
+            //navController.navigate(R.id.homeFragment);
+            navController.popBackStack();
         }
     }
 

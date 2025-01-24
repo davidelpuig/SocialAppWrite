@@ -13,6 +13,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
@@ -65,6 +66,7 @@ public class NewPostFragment extends Fragment {
 
     Uri mediaUri;
     String mediaTipo;
+    String userPhotoUrl;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -112,6 +114,16 @@ public class NewPostFragment extends Fragment {
             this.mediaUri = media.uri;
             this.mediaTipo = media.tipo;
             Glide.with(this).load(media.uri).into((ImageView) view.findViewById(R.id.previsualizacion));
+        });
+
+        appViewModel.userProfile.observe(getViewLifecycleOwner(), new Observer<Map<String, Object>>() {
+            @Override
+            public void onChanged(Map<String, Object> stringObjectMap) {
+                if(stringObjectMap.get("photoUrl") != null)
+                    userPhotoUrl =stringObjectMap.get("photoUrl").toString();
+                else
+                    userPhotoUrl = null;
+            }
         });
     }
 
@@ -161,7 +173,7 @@ public class NewPostFragment extends Fragment {
         Map<String, Object> data = new HashMap<>();
         data.put("uid", user.getId().toString());
         data.put("author", user.getName().toString());
-        data.put("authorPhotoUrl", null);
+        data.put("authorPhotoUrl", userPhotoUrl);
         data.put("content", content);
         data.put("mediaType", mediaTipo);
         data.put("mediaUrl", mediaUrl);
