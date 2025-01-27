@@ -23,12 +23,16 @@ import com.bumptech.glide.Glide;
 import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.snackbar.Snackbar;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import io.appwrite.Client;
+import io.appwrite.Query;
 import io.appwrite.coroutines.CoroutineCallback;
 import io.appwrite.exceptions.AppwriteException;
 import io.appwrite.models.DocumentList;
@@ -146,7 +150,7 @@ public class HomeFragment extends Fragment {
             databases.listDocuments(
                     getString(R.string.APPWRITE_DATABASE_ID), // databaseId
                     getString(R.string.APPWRITE_POSTS_COLLECTION_ID), // collectionId
-                    new ArrayList<>(), // queries (optional)
+                    Arrays.asList(Query.Companion.orderDesc("timeStamp"), Query.Companion.limit(50)),
                     new CoroutineCallback<>((result, error) -> {
                         if (error != null) {
                             Snackbar.make(requireView(), "Error al obtener los posts: " + error.toString(), Snackbar.LENGTH_LONG).show();
@@ -165,7 +169,7 @@ public class HomeFragment extends Fragment {
 
     class PostViewHolder extends RecyclerView.ViewHolder{
         ImageView authorPhotoImageView, likeImageView, mediaImageView;
-        TextView authorTextView, contentTextView, numLikesTextView;
+        TextView authorTextView, contentTextView, numLikesTextView, timeTextView;
 
         PostViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -176,6 +180,7 @@ public class HomeFragment extends Fragment {
             authorTextView = itemView.findViewById(R.id.authorTextView);
             contentTextView = itemView.findViewById(R.id.contentTextView);
             numLikesTextView = itemView.findViewById(R.id.numLikesTextView);
+            timeTextView = itemView.findViewById(R.id.timeTextView);
         }
     }
 
@@ -204,6 +209,17 @@ public class HomeFragment extends Fragment {
             }
             holder.authorTextView.setText(post.get("author").toString());
             holder.contentTextView.setText(post.get("content").toString());
+
+            //Fecha y hora
+            SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+            Calendar calendar = Calendar.getInstance();
+            if(post.get("timeStamp") != null)
+                calendar.setTimeInMillis((long)post.get("timeStamp"));
+            else
+                calendar.setTimeInMillis(0);
+
+            holder.timeTextView.setText( formatter.format(calendar.getTime()));
+
 
             // Gestion de likes
             List<String> likes = (List<String>) post.get("likes");

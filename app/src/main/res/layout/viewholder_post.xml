@@ -35,12 +35,19 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="5dp"
                 android:text="Contenido"/>
+            <TextView
+                android:id="@+id/timeTextView"
+                style="@style/Base.TextAppearance.AppCompat.Small"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:text="01-01-2000 00:00"/>
             <ImageView
                 android:id="@+id/mediaImage"
                 android:layout_marginTop="10dp"
                 android:layout_width="196dp"
                 android:layout_height="196dp"
-                android:adjustViewBounds="true"/>
+               android:adjustViewBounds="true"/>
             <LinearLayout
                 android:id="@+id/likeLinearLayout"
                 android:layout_marginTop="10dp"
