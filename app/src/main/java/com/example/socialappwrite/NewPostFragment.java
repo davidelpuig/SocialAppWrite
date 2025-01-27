@@ -179,6 +179,7 @@ public class NewPostFragment extends Fragment {
         data.put("mediaType", mediaTipo);
         data.put("mediaUrl", mediaUrl);
         data.put("timeStamp", Calendar.getInstance().getTimeInMillis());
+        data.put("parentPost", appViewModel.parentPostId);
 
         // Crear el documento
         try {

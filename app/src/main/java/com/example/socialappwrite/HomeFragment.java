@@ -57,6 +57,8 @@ public class HomeFragment extends Fragment {
 
     PostsAdapter adapter;
 
+    HashMap<String, DocumentList<Map<String,Object>>> listaPosts;
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -84,6 +86,7 @@ public class HomeFragment extends Fragment {
         view.findViewById(R.id.gotoNewPostFragmentButton).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                appViewModel.parentPostId = null;
                 navController.navigate(R.id.newPostFragment);
             }
         });
@@ -103,6 +106,7 @@ public class HomeFragment extends Fragment {
                         emailTextView.setText(mapUser.getEmail());
                         //Glide.with(requireView()).load(R.drawable.user).into(photoImageView);
 
+                        listaPosts = new HashMap<>();
                         obtenerPosts();
                     }
                 }
@@ -141,6 +145,7 @@ public class HomeFragment extends Fragment {
         }*/
     }
 
+
     void obtenerPosts()
     {
         Databases databases = new Databases(client);
@@ -150,7 +155,7 @@ public class HomeFragment extends Fragment {
             databases.listDocuments(
                     getString(R.string.APPWRITE_DATABASE_ID), // databaseId
                     getString(R.string.APPWRITE_POSTS_COLLECTION_ID), // collectionId
-                    Arrays.asList(Query.Companion.orderDesc("timeStamp"), Query.Companion.limit(50)),
+                    Arrays.asList(Query.Companion.isNull("parentPost"),  Query.Companion.orderDesc("timeStamp"), Query.Companion.limit(50)),
                     new CoroutineCallback<>((result, error) -> {
                         if (error != null) {
                             Snackbar.make(requireView(), "Error al obtener los posts: " + error.toString(), Snackbar.LENGTH_LONG).show();
@@ -159,7 +164,41 @@ public class HomeFragment extends Fragment {
 
                         System.out.println( result.toString() );
 
+                        //Version simple
                         mainHandler.post(() -> adapter.establecerLista(result));
+
+                    })
+            );
+        } catch (AppwriteException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    void obtenerComentarios(PostViewHolder viewHolder, String parentId, PostsAdapter parentRWAdapter, int parentRWPos)
+    {
+        Databases databases = new Databases(client);
+        Handler mainHandler = new Handler(Looper.getMainLooper());
+
+        try {
+            databases.listDocuments(
+                    getString(R.string.APPWRITE_DATABASE_ID), // databaseId
+                    getString(R.string.APPWRITE_POSTS_COLLECTION_ID), // collectionId
+                    Arrays.asList(Query.Companion.equal("parentPost", parentId), Query.Companion.orderDesc("timeStamp"), Query.Companion.limit(50)),
+                    new CoroutineCallback<>((result, error) -> {
+                        if (error != null) {
+                            Snackbar.make(requireView(), "Error al obtener los posts: " + error.toString(), Snackbar.LENGTH_LONG).show();
+                            return;
+                        }
+
+                        System.out.println( result.toString() );
+
+                        if(result.getDocuments().size() > 0) {
+                            mainHandler.post(() ->
+                            {
+                                viewHolder.commentsAdapter.establecerLista(result);
+                                //parentRWAdapter.notifyItemChanged(parentRWPos);
+                            });
+                        }
                     })
             );
         } catch (AppwriteException e) {
@@ -169,7 +208,10 @@ public class HomeFragment extends Fragment {
 
     class PostViewHolder extends RecyclerView.ViewHolder{
         ImageView authorPhotoImageView, likeImageView, mediaImageView;
-        TextView authorTextView, contentTextView, numLikesTextView, timeTextView;
+        TextView authorTextView, contentTextView, numLikesTextView, timeTextView, replyButton;
+        RecyclerView commentsRecyclerView;
+
+        PostsAdapter commentsAdapter;
 
         PostViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -181,6 +223,13 @@ public class HomeFragment extends Fragment {
             contentTextView = itemView.findViewById(R.id.contentTextView);
             numLikesTextView = itemView.findViewById(R.id.numLikesTextView);
             timeTextView = itemView.findViewById(R.id.timeTextView);
+            commentsRecyclerView = itemView.findViewById(R.id.commentsRecyclerView);
+            replyButton = itemView.findViewById(R.id.replyButton);
+
+
+            commentsAdapter = new PostsAdapter();
+            commentsRecyclerView.setAdapter(commentsAdapter);
+
         }
     }
 
@@ -259,7 +308,7 @@ public class HomeFragment extends Fragment {
 
                                 System.out.println("Likes actualizados:" + result.toString());
 
-                                mainHandler.post(() -> obtenerPosts());
+                                mainHandler.post(() -> adapter.notifyItemChanged(position));
                             })
                     );
                 } catch (AppwriteException e) {
@@ -284,6 +333,18 @@ public class HomeFragment extends Fragment {
                 holder.mediaImageView.setVisibility(View.GONE);
             }
 
+            //Comments
+            holder.replyButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    appViewModel.parentPostId = lista.getDocuments().get(holder.getAdapterPosition()).getId();
+                    navController.navigate(R.id.newPostFragment);
+                }
+            });
+
+            obtenerComentarios(holder, lista.getDocuments().get(holder.getAdapterPosition()).getId(), this, holder.getAdapterPosition());
+
+
         }
 
         @Override
@@ -298,4 +359,5 @@ public class HomeFragment extends Fragment {
         }
 
     }
+
 }

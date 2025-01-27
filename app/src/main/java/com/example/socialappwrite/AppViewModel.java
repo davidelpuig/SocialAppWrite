@@ -26,6 +26,8 @@ public class AppViewModel extends AndroidViewModel {
             MutableLiveData<>();
     public MutableLiveData<Media> mediaSeleccionado = new
             MutableLiveData<>();
+
+    public String parentPostId;
     public MutableLiveData<User<Map<String,Object>>> userAccount = new MutableLiveData<>();
     public MutableLiveData<Map<String, Object>> userProfile = new MutableLiveData<>();
 
