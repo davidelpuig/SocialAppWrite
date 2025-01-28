@@ -497,6 +497,11 @@ public class HomeFragment extends Fragment {
                 }
             });
 
+            // Hashtags
+            HashtagsAdapter hashtagsAdapter = new HashtagsAdapter();
+            hashtagsAdapter.establecerLista(post.get("hashtags"));
+            holder.hashtagsRecyclerView.setAdapter(hashtagsAdapter);
+
         }
 
         @Override
@@ -510,6 +515,42 @@ public class HomeFragment extends Fragment {
             notifyDataSetChanged();
         }
 
+    }
+
+    class HashtagViewHolder extends RecyclerView.ViewHolder {
+
+        TextView hashTagTextView;
+        public HashtagViewHolder(@NonNull View itemView) {
+            super(itemView);
+
+            hashTagTextView = itemView.findViewById(R.id.hashtagTextView);
+        }
+    }
+
+    class HashtagsAdapter extends RecyclerView.Adapter<HashtagViewHolder> {
+
+        List<String> lista;
+        @NonNull
+        @Override
+        public HashtagViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            return new HashtagViewHolder(LayoutInflater.from(parent.getContext()).inflate(R.layout.viewholder_hashtag, parent, false));;
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull HashtagViewHolder holder, int position) {
+
+            holder.hashTagTextView.setText("#"+lista.get(position).toString());
+        }
+
+        @Override
+        public int getItemCount() {
+            return lista == null ? 0 : lista.size();
+        }
+
+        public void establecerLista(List<String> lista) {
+            this.lista = lista;
+            notifyDataSetChanged();
+        }
     }
 
 }

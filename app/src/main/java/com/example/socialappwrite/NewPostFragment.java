@@ -42,6 +42,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import io.appwrite.Client;
@@ -181,6 +182,9 @@ public class NewPostFragment extends Fragment {
         data.put("timeStamp", Calendar.getInstance().getTimeInMillis());
         data.put("parentPost", appViewModel.parentPostId);
 
+        List<String> hashtags = processHashtags(content);
+        data.put("hashtags", hashtags);
+
         // Crear el documento
         try {
             databases.createDocument(
@@ -208,6 +212,31 @@ public class NewPostFragment extends Fragment {
         } catch (AppwriteException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    List<String> processHashtags(String content)
+    {
+        int pos = 0;
+        List<String> hashtags = new ArrayList<>();
+        hashtags.clear();
+        while(pos < content.length())
+        {
+            if(content.charAt(pos) == '#')
+            {
+                pos++;
+                StringBuilder sb = new StringBuilder();
+                while(pos < content.length() && content.charAt(pos) != ' ')
+                {
+                    sb.append(content.charAt(pos));
+                    pos++;
+                }
+                hashtags.add(sb.toString());
+
+
+            }
+            pos++;
+        }
+        return hashtags;
     }
 
     private void pujaIguardarEnAppWrite(User<Map<String, Object>> user, final String postText)
