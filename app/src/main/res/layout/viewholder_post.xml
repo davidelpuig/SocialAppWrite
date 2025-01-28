@@ -34,20 +34,59 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:paddingStart="10dp">
-            <ImageView
-                android:id="@+id/deleteImageView"
-                android:layout_width="20dp"
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+                <TextView
+                    android:id="@+id/authorTextView"
+                    style="@style/Base.TextAppearance.AppCompat.Small"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:text="Author"/>
+                <ImageView
+                    android:id="@+id/deleteImageView"
+                    android:layout_width="20dp"
+                    android:layout_height="wrap_content"
+                    android:adjustViewBounds="true"
+                    android:layout_gravity="end"
+                    app:srcCompat="@drawable/delete" />
+            </LinearLayout>
+            <LinearLayout
+                android:id="@+id/originalAuthorInfo"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:adjustViewBounds="true"
-                android:layout_gravity="end"
-                app:srcCompat="@drawable/delete" />
-            <TextView
-                android:id="@+id/authorTextView"
-                style="@style/Base.TextAppearance.AppCompat.Small"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:text="Author"/>
+                android:orientation="vertical">
+                <TextView
+                    style="@style/Base.TextAppearance.AppCompat.Small"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:text="ha compartido un post:"/>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:orientation="horizontal"
+                    android:paddingStart="10dp">
+                    <ImageView
+                        android:id="@+id/originalAuthorPhotoImageView"
+                        android:layout_width="30dp"
+                        android:layout_height="wrap_content"
+                        android:adjustViewBounds="true"
+                        app:srcCompat="@drawable/user"
+                        />
+                    <TextView
+                        android:id="@+id/originalAuthorTextView"
+                        style="@style/Base.TextAppearance.AppCompat.Small"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="10dp"
+                        android:gravity="center_vertical"
+                        android:text="Author"/>
+                </LinearLayout>
+            </LinearLayout>
             <TextView
                 android:id="@+id/contentTextView"
                 android:textSize="20sp"
@@ -88,6 +127,14 @@
                     android:layout_marginStart="4dp"
                     android:layout_gravity="center_vertical"
                     android:text="200K"/>
+                <ImageView
+                    android:id="@+id/shareImageView"
+                    app:srcCompat="@drawable/share"
+                    android:adjustViewBounds="true"
+                    android:layout_marginStart="10dp"
+                    android:layout_width="20dp"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"/>
             </LinearLayout>
             <TextView
                 android:id="@+id/replyButton"

@@ -60,6 +60,8 @@ public class HomeFragment extends Fragment {
     Account account;
 
     String userId;
+    String userName;
+    String userPhotoUrl;
 
     PostsAdapter adapter;
 
@@ -108,7 +110,8 @@ public class HomeFragment extends Fragment {
                     @Override
                     public void onChanged(User<Map<String, Object>> mapUser) {
                         userId = mapUser.getId();
-                        displayNameTextView.setText(mapUser.getName());
+                        userName = mapUser.getName();
+                        displayNameTextView.setText(userName);
                         emailTextView.setText(mapUser.getEmail());
 
 
@@ -121,8 +124,10 @@ public class HomeFragment extends Fragment {
         appViewModel.userProfile.observe(getViewLifecycleOwner(), new Observer<Map<String, Object>>() {
             @Override
             public void onChanged(Map<String, Object> stringObjectMap) {
-                if(stringObjectMap.get("photoUrl") != null)
-                    Glide.with(requireView()).load(stringObjectMap.get("photoUrl").toString()).into(photoImageView);
+                if(stringObjectMap.get("photoUrl") != null) {
+                    userPhotoUrl = stringObjectMap.get("photoUrl").toString();
+                    Glide.with(requireView()).load(userPhotoUrl).into(photoImageView);
+                }
                 else
                     Glide.with(requireView()).load(R.drawable.user).into(photoImageView);
             }
@@ -176,9 +181,10 @@ public class HomeFragment extends Fragment {
 
 
     class PostViewHolder extends RecyclerView.ViewHolder{
-        ImageView authorPhotoImageView, authorSmallPhotoImageView, likeImageView, mediaImageView, deleteImageView;
-        TextView authorTextView, contentTextView, numLikesTextView, timeTextView, replyButton;
+        ImageView authorPhotoImageView, authorSmallPhotoImageView, likeImageView, mediaImageView, deleteImageView, shareImageView, originalAuthorPhotoImageView;
+        TextView authorTextView, contentTextView, numLikesTextView, timeTextView, replyButton, originalAuthorNameTextView;
         RecyclerView commentsRecyclerView;
+        View originalAuthorInfo;
 
         PostsAdapter commentsAdapter;
 
@@ -190,12 +196,16 @@ public class HomeFragment extends Fragment {
             likeImageView = itemView.findViewById(R.id.likeImageView);
             mediaImageView = itemView.findViewById(R.id.mediaImage);
             deleteImageView = itemView.findViewById(R.id.deleteImageView);
+            shareImageView = itemView.findViewById(R.id.shareImageView);
+            originalAuthorPhotoImageView = itemView.findViewById(R.id.originalAuthorPhotoImageView);
             authorTextView = itemView.findViewById(R.id.authorTextView);
             contentTextView = itemView.findViewById(R.id.contentTextView);
             numLikesTextView = itemView.findViewById(R.id.numLikesTextView);
             timeTextView = itemView.findViewById(R.id.timeTextView);
+            originalAuthorNameTextView = itemView.findViewById(R.id.originalAuthorTextView);
             commentsRecyclerView = itemView.findViewById(R.id.commentsRecyclerView);
             replyButton = itemView.findViewById(R.id.replyButton);
+            originalAuthorInfo = itemView.findViewById(R.id.originalAuthorInfo);
 
 
             commentsRecyclerView.setAdapter(commentsAdapter);
@@ -239,6 +249,7 @@ public class HomeFragment extends Fragment {
             {
                 holder.authorPhotoImageView.setVisibility(GONE);
                 holder.authorSmallPhotoImageView.setVisibility(VISIBLE);
+                holder.contentTextView.setTextSize(15.f);
             }
             else
             {
@@ -258,6 +269,25 @@ public class HomeFragment extends Fragment {
             }
             holder.authorTextView.setText(post.get("author").toString());
             holder.contentTextView.setText(post.get("content").toString());
+
+            // Post compartido
+            if(post.get("originalAuthor") != null)
+            {
+                holder.originalAuthorInfo.setVisibility(VISIBLE);
+                holder.originalAuthorNameTextView.setText(post.get("originalAuthor").toString());
+                if(post.get("originalAuthorPhotoUrl") != null)
+                {
+                    Glide.with(getContext()).load(post.get("originalAuthorPhotoUrl").toString()).circleCrop().into(holder.originalAuthorPhotoImageView);
+                }
+                else
+                {
+                    holder.originalAuthorPhotoImageView.setImageResource(R.drawable.user);
+                }
+            }
+            else
+            {
+                holder.originalAuthorInfo.setVisibility(GONE);
+            }
 
             //Fecha y hora
             SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm");
@@ -401,6 +431,71 @@ public class HomeFragment extends Fragment {
                 }
             });
 
+            // Share post
+            holder.shareImageView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+                    builder.setTitle("Confirmación")
+                            .setMessage("¿Compartir este post?")
+                            .setPositiveButton("Sí", (dialog, which) -> {
+                                // Acción al pulsar "Sí"
+
+                                Handler mainHandler = new Handler(Looper.getMainLooper());
+
+                                // Crear instancia del servicio Databases
+                                Databases databases = new Databases(client);
+
+                                // Datos del documento
+                                Map<String, Object> data = new HashMap<>();
+                                data.put("uid",userId);
+                                data.put("author", userName);
+                                data.put("authorPhotoUrl", userPhotoUrl);
+                                data.put("originalAuthor", post.get("author"));
+                                data.put("originalAuthorPhotoUrl", post.get("authorPhotoUrl"));
+                                data.put("content", post.get("content"));
+                                data.put("mediaType", post.get("mediaType"));
+                                data.put("mediaUrl", post.get("mediaUrl"));
+                                data.put("timeStamp", Calendar.getInstance().getTimeInMillis());
+                                data.put("parentPost", null);
+
+                                // Crear el documento
+                                try {
+                                    databases.createDocument(
+                                            getString(R.string.APPWRITE_DATABASE_ID), // databaseId
+                                            getString(R.string.APPWRITE_POSTS_COLLECTION_ID), // collectionId
+                                            "unique()", // Usa 'unique()' para generar un ID único automáticamente
+                                            data,
+                                            new ArrayList<>(), // Permisos opcionales, como ["role:all"]
+                                            new CoroutineCallback<>((result, error) -> {
+                                                if (error != null) {
+                                                    Snackbar.make(requireView(), "Error: " + error.toString(), Snackbar.LENGTH_LONG).show();
+                                                }
+                                                else
+                                                {
+                                                    System.out.println("Post creado:" + result.toString());
+                                                    mainHandler.post(() ->
+                                                    {
+                                                       obtenerPosts();
+                                                    });
+                                                }
+
+                                            })
+                                    );
+                                } catch (AppwriteException e) {
+                                    throw new RuntimeException(e);
+                                }
+
+                            })
+                            .setNegativeButton("No", (dialog, which) -> {
+                                // Acción al pulsar "No"
+                                System.out.println("Se canceló la acción.");
+                            });
+
+                    AlertDialog dialog = builder.create();
+                    dialog.show();
+                }
+            });
 
         }
 
