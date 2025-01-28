@@ -3,6 +3,7 @@ package com.example.socialappwrite;
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
 
+import android.app.AlertDialog;
 import android.opengl.Visibility;
 import android.os.Bundle;
 
@@ -175,7 +176,7 @@ public class HomeFragment extends Fragment {
 
 
     class PostViewHolder extends RecyclerView.ViewHolder{
-        ImageView authorPhotoImageView, authorSmallPhotoImageView, likeImageView, mediaImageView;
+        ImageView authorPhotoImageView, authorSmallPhotoImageView, likeImageView, mediaImageView, deleteImageView;
         TextView authorTextView, contentTextView, numLikesTextView, timeTextView, replyButton;
         RecyclerView commentsRecyclerView;
 
@@ -188,6 +189,7 @@ public class HomeFragment extends Fragment {
             authorSmallPhotoImageView = itemView.findViewById(R.id.smallPhotoImageView);
             likeImageView = itemView.findViewById(R.id.likeImageView);
             mediaImageView = itemView.findViewById(R.id.mediaImage);
+            deleteImageView = itemView.findViewById(R.id.deleteImageView);
             authorTextView = itemView.findViewById(R.id.authorTextView);
             contentTextView = itemView.findViewById(R.id.contentTextView);
             numLikesTextView = itemView.findViewById(R.id.numLikesTextView);
@@ -348,6 +350,56 @@ public class HomeFragment extends Fragment {
             if(subLista != null)
                 commentsAdapter.establecerLista(subLista);
             holder.commentsRecyclerView.setAdapter(commentsAdapter);
+
+            // Delete post
+            if(userId.equals(post.get("uid")))
+            {
+                holder.deleteImageView.setVisibility(VISIBLE);
+            }
+            else
+            {
+                holder.deleteImageView.setVisibility(GONE);
+            }
+
+            holder.deleteImageView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+
+                    AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+                    builder.setTitle("Confirmación")
+                            .setMessage("¿Estás seguro de borrar el post")
+                            .setPositiveButton("Sí", (dialog, which) -> {
+                                // Acción al pulsar "Sí"
+
+                                Databases databases = new Databases(client);
+                                Handler mainHandler = new Handler(Looper.getMainLooper());
+
+                                databases.deleteDocument(
+                                        getString(R.string.APPWRITE_DATABASE_ID), // databaseId
+                                        getString(R.string.APPWRITE_POSTS_COLLECTION_ID), // collectionId
+                                        lista.getDocuments().get(holder.getAdapterPosition()).getId(),
+                                        new CoroutineCallback<>((result, error) -> {
+                                            if (error != null) {
+                                                Snackbar.make(requireView(), "Error al borrar el post: " + error.toString(), Snackbar.LENGTH_LONG).show();
+                                                return;
+                                            }
+
+                                            System.out.println( result.toString() );
+
+                                            mainHandler.post(() -> { obtenerPosts(); });
+
+                                        })
+                                );
+                            })
+                            .setNegativeButton("No", (dialog, which) -> {
+                                // Acción al pulsar "No"
+                                System.out.println("Se canceló la acción.");
+                            });
+
+                    AlertDialog dialog = builder.create();
+                    dialog.show();
+                }
+            });
 
 
         }
