@@ -10,14 +10,25 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="10dp">
-        <ImageView
-            android:id="@+id/photoImageView"
-            android:layout_width="60dp"
-            android:layout_height="wrap_content"
-            android:adjustViewBounds="true"
-            app:srcCompat="@drawable/user" />
-        <LinearLayout
+        <FrameLayout
             android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+            <ImageView
+                android:id="@+id/photoImageView"
+                android:layout_width="60dp"
+                android:layout_height="wrap_content"
+                android:adjustViewBounds="true"
+                app:srcCompat="@drawable/user" />
+            <ImageView
+                android:id="@+id/smallPhotoImageView"
+                android:layout_width="30dp"
+                android:layout_height="wrap_content"
+                android:adjustViewBounds="true"
+                app:srcCompat="@drawable/user"
+                android:visibility="gone"/>
+        </FrameLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:paddingStart="10dp">
@@ -81,7 +92,8 @@
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/commentsRecyclerView"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"/>
+                android:layout_height="wrap_content"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"/>
         </LinearLayout>
     </LinearLayout>
 </androidx.cardview.widget.CardView>

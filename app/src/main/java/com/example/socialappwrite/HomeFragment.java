@@ -1,5 +1,9 @@
 package com.example.socialappwrite;
 
+import static android.view.View.GONE;
+import static android.view.View.VISIBLE;
+
+import android.opengl.Visibility;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -35,6 +39,7 @@ import io.appwrite.Client;
 import io.appwrite.Query;
 import io.appwrite.coroutines.CoroutineCallback;
 import io.appwrite.exceptions.AppwriteException;
+import io.appwrite.models.Document;
 import io.appwrite.models.DocumentList;
 import io.appwrite.models.Session;
 import io.appwrite.models.User;
@@ -80,7 +85,7 @@ public class HomeFragment extends Fragment {
         emailTextView = header.findViewById(R.id.emailTextView);
 
         RecyclerView postsRecyclerView = view.findViewById(R.id.postsRecyclerView);
-        adapter = new PostsAdapter();
+        adapter = new PostsAdapter(null, 0);
         postsRecyclerView.setAdapter(adapter);
 
         view.findViewById(R.id.gotoNewPostFragmentButton).setOnClickListener(new View.OnClickListener() {
@@ -104,7 +109,7 @@ public class HomeFragment extends Fragment {
                         userId = mapUser.getId();
                         displayNameTextView.setText(mapUser.getName());
                         emailTextView.setText(mapUser.getEmail());
-                        //Glide.with(requireView()).load(R.drawable.user).into(photoImageView);
+
 
                         listaPosts = new HashMap<>();
                         obtenerPosts();
@@ -122,27 +127,6 @@ public class HomeFragment extends Fragment {
             }
         });
 
-        /*try {
-            account.get(new CoroutineCallback<>((result, error) -> {
-                if (error != null) {
-                    error.printStackTrace();
-                    return;
-                }
-
-                mainHandler.post(() ->
-                {
-                    userId = result.getId();
-                    displayNameTextView.setText(result.getName().toString());
-                    emailTextView.setText(result.getEmail().toString());
-                    Glide.with(requireView()).load(R.drawable.user).into(photoImageView);
-
-                    obtenerPosts();
-                });
-
-            }));
-        } catch (AppwriteException e) {
-            throw new RuntimeException(e);
-        }*/
     }
 
 
@@ -155,7 +139,7 @@ public class HomeFragment extends Fragment {
             databases.listDocuments(
                     getString(R.string.APPWRITE_DATABASE_ID), // databaseId
                     getString(R.string.APPWRITE_POSTS_COLLECTION_ID), // collectionId
-                    Arrays.asList(Query.Companion.isNull("parentPost"),  Query.Companion.orderDesc("timeStamp"), Query.Companion.limit(50)),
+                    Arrays.asList(/*Query.Companion.isNull("parentPost"),*/  Query.Companion.orderDesc("timeStamp"), Query.Companion.limit(50)),
                     new CoroutineCallback<>((result, error) -> {
                         if (error != null) {
                             Snackbar.make(requireView(), "Error al obtener los posts: " + error.toString(), Snackbar.LENGTH_LONG).show();
@@ -163,9 +147,24 @@ public class HomeFragment extends Fragment {
                         }
 
                         System.out.println( result.toString() );
+
+                        listaPosts = new HashMap<>();
+
+                        for(int i = 0; i < result.getDocuments().size(); i++)
+                        {
+                            Document<Map<String, Object>> document = result.getDocuments().get(i);
+                            String parentId = (document.getData().get("parentPost") == null ? null : document.getData().get("parentPost").toString());
+                            if (listaPosts.get(parentId) == null)
+                            {
+                                listaPosts.put(parentId, new DocumentList<>(0, new ArrayList<>()));
+                            }
+                            DocumentList<Map<String,Object>> subLista = listaPosts.get(parentId);
+                            subLista.getDocuments().add(document);
+                            listaPosts.replace(parentId, subLista);
+                        }
 
                         //Version simple
-                        mainHandler.post(() -> adapter.establecerLista(result));
+                        mainHandler.post(() -> adapter.establecerLista(listaPosts.get(null)));
 
                     })
             );
@@ -174,40 +173,9 @@ public class HomeFragment extends Fragment {
         }
     }
 
-    void obtenerComentarios(PostViewHolder viewHolder, String parentId, PostsAdapter parentRWAdapter, int parentRWPos)
-    {
-        Databases databases = new Databases(client);
-        Handler mainHandler = new Handler(Looper.getMainLooper());
-
-        try {
-            databases.listDocuments(
-                    getString(R.string.APPWRITE_DATABASE_ID), // databaseId
-                    getString(R.string.APPWRITE_POSTS_COLLECTION_ID), // collectionId
-                    Arrays.asList(Query.Companion.equal("parentPost", parentId), Query.Companion.orderDesc("timeStamp"), Query.Companion.limit(50)),
-                    new CoroutineCallback<>((result, error) -> {
-                        if (error != null) {
-                            Snackbar.make(requireView(), "Error al obtener los posts: " + error.toString(), Snackbar.LENGTH_LONG).show();
-                            return;
-                        }
-
-                        System.out.println( result.toString() );
-
-                        if(result.getDocuments().size() > 0) {
-                            mainHandler.post(() ->
-                            {
-                                viewHolder.commentsAdapter.establecerLista(result);
-                                //parentRWAdapter.notifyItemChanged(parentRWPos);
-                            });
-                        }
-                    })
-            );
-        } catch (AppwriteException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     class PostViewHolder extends RecyclerView.ViewHolder{
-        ImageView authorPhotoImageView, likeImageView, mediaImageView;
+        ImageView authorPhotoImageView, authorSmallPhotoImageView, likeImageView, mediaImageView;
         TextView authorTextView, contentTextView, numLikesTextView, timeTextView, replyButton;
         RecyclerView commentsRecyclerView;
 
@@ -217,6 +185,7 @@ public class HomeFragment extends Fragment {
             super(itemView);
 
             authorPhotoImageView = itemView.findViewById(R.id.photoImageView);
+            authorSmallPhotoImageView = itemView.findViewById(R.id.smallPhotoImageView);
             likeImageView = itemView.findViewById(R.id.likeImageView);
             mediaImageView = itemView.findViewById(R.id.mediaImage);
             authorTextView = itemView.findViewById(R.id.authorTextView);
@@ -227,7 +196,6 @@ public class HomeFragment extends Fragment {
             replyButton = itemView.findViewById(R.id.replyButton);
 
 
-            commentsAdapter = new PostsAdapter();
             commentsRecyclerView.setAdapter(commentsAdapter);
 
         }
@@ -236,6 +204,23 @@ public class HomeFragment extends Fragment {
     class PostsAdapter extends RecyclerView.Adapter<PostViewHolder> {
 
         DocumentList<Map<String,Object>> lista = null;
+        PostsAdapter parentAdapter;
+        int posInParent;
+
+        public PostsAdapter(PostsAdapter parentAdapter, int posInParent)
+        {
+            this.parentAdapter = parentAdapter;
+            this.posInParent = posInParent;
+        }
+
+        void notifyElementUpdate()
+        {
+            if(parentAdapter != null)
+            {
+                parentAdapter.notifyItemChanged(posInParent);
+                parentAdapter.notifyElementUpdate();
+            }
+        }
 
         @NonNull
         @Override
@@ -248,13 +233,26 @@ public class HomeFragment extends Fragment {
 
             Map<String,Object> post = lista.getDocuments().get(position).getData();
 
+            if(post.get("parentPost") != null)
+            {
+                holder.authorPhotoImageView.setVisibility(GONE);
+                holder.authorSmallPhotoImageView.setVisibility(VISIBLE);
+            }
+            else
+            {
+                holder.authorPhotoImageView.setVisibility(VISIBLE);
+                holder.authorSmallPhotoImageView.setVisibility(GONE);
+            }
+
             if (post.get("authorPhotoUrl") == null)
             {
                 holder.authorPhotoImageView.setImageResource(R.drawable.user);
+                holder.authorSmallPhotoImageView.setImageResource(R.drawable.user);
             }
             else
             {
                 Glide.with(getContext()).load(post.get("authorPhotoUrl").toString()).circleCrop().into(holder.authorPhotoImageView);
+                Glide.with(getContext()).load(post.get("authorPhotoUrl").toString()).circleCrop().into(holder.authorSmallPhotoImageView);
             }
             holder.authorTextView.setText(post.get("author").toString());
             holder.contentTextView.setText(post.get("content").toString());
@@ -308,7 +306,10 @@ public class HomeFragment extends Fragment {
 
                                 System.out.println("Likes actualizados:" + result.toString());
 
-                                mainHandler.post(() -> adapter.notifyItemChanged(position));
+                                mainHandler.post(() -> {
+                                    adapter.notifyItemChanged(position);
+                                    notifyElementUpdate();
+                                });
                             })
                     );
                 } catch (AppwriteException e) {
@@ -319,7 +320,7 @@ public class HomeFragment extends Fragment {
 
             // Miniatura de media
             if (post.get("mediaUrl") != null) {
-                holder.mediaImageView.setVisibility(View.VISIBLE);
+                holder.mediaImageView.setVisibility(VISIBLE);
                 if ("audio".equals(post.get("mediaType").toString())) {
                     Glide.with(requireView()).load(R.drawable.audio).centerCrop().into(holder.mediaImageView);
                 } else {
@@ -330,7 +331,7 @@ public class HomeFragment extends Fragment {
                     navController.navigate(R.id.mediaFragment);
                 });
             } else {
-                holder.mediaImageView.setVisibility(View.GONE);
+                holder.mediaImageView.setVisibility(GONE);
             }
 
             //Comments
@@ -342,7 +343,11 @@ public class HomeFragment extends Fragment {
                 }
             });
 
-            obtenerComentarios(holder, lista.getDocuments().get(holder.getAdapterPosition()).getId(), this, holder.getAdapterPosition());
+            PostsAdapter commentsAdapter = new PostsAdapter(this, position);
+            DocumentList<Map<String,Object>> subLista = listaPosts.get(lista.getDocuments().get(position).getId());
+            if(subLista != null)
+                commentsAdapter.establecerLista(subLista);
+            holder.commentsRecyclerView.setAdapter(commentsAdapter);
 
 
         }
