@@ -14,7 +14,9 @@ import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 
 import android.os.Handler;
 import android.os.Looper;
@@ -135,6 +137,10 @@ public class HomeFragment extends Fragment {
 
     }
 
+    protected List<String> postsQuery()
+    {
+        return Arrays.asList(/*Query.Companion.isNull("parentPost"),*/  Query.Companion.orderDesc("timeStamp"), Query.Companion.limit(50));
+    }
 
     void obtenerPosts()
     {
@@ -145,7 +151,7 @@ public class HomeFragment extends Fragment {
             databases.listDocuments(
                     getString(R.string.APPWRITE_DATABASE_ID), // databaseId
                     getString(R.string.APPWRITE_POSTS_COLLECTION_ID), // collectionId
-                    Arrays.asList(/*Query.Companion.isNull("parentPost"),*/  Query.Companion.orderDesc("timeStamp"), Query.Companion.limit(50)),
+                    postsQuery(),
                     new CoroutineCallback<>((result, error) -> {
                         if (error != null) {
                             Snackbar.make(requireView(), "Error al obtener los posts: " + error.toString(), Snackbar.LENGTH_LONG).show();
@@ -183,7 +189,7 @@ public class HomeFragment extends Fragment {
     class PostViewHolder extends RecyclerView.ViewHolder{
         ImageView authorPhotoImageView, authorSmallPhotoImageView, likeImageView, mediaImageView, deleteImageView, shareImageView, originalAuthorPhotoImageView;
         TextView authorTextView, contentTextView, numLikesTextView, timeTextView, replyButton, originalAuthorNameTextView;
-        RecyclerView commentsRecyclerView;
+        RecyclerView commentsRecyclerView, hashtagsRecyclerView;
         View originalAuthorInfo;
 
         PostsAdapter commentsAdapter;
@@ -204,6 +210,7 @@ public class HomeFragment extends Fragment {
             timeTextView = itemView.findViewById(R.id.timeTextView);
             originalAuthorNameTextView = itemView.findViewById(R.id.originalAuthorTextView);
             commentsRecyclerView = itemView.findViewById(R.id.commentsRecyclerView);
+            hashtagsRecyclerView = itemView.findViewById(R.id.recyclerViewHashtags);
             replyButton = itemView.findViewById(R.id.replyButton);
             originalAuthorInfo = itemView.findViewById(R.id.originalAuthorInfo);
 
@@ -499,8 +506,14 @@ public class HomeFragment extends Fragment {
 
             // Hashtags
             HashtagsAdapter hashtagsAdapter = new HashtagsAdapter();
-            hashtagsAdapter.establecerLista(post.get("hashtags"));
+            hashtagsAdapter.establecerLista((List<String>)post.get("hashtags"));
             holder.hashtagsRecyclerView.setAdapter(hashtagsAdapter);
+            /*holder.hashtagsRecyclerView.post(() -> {
+                int spanCount = Math.max(1, holder.hashtagsRecyclerView.getWidth() / 200); // Ajustar según tamaño deseado
+                StaggeredGridLayoutManager layoutManager = (StaggeredGridLayoutManager) holder.hashtagsRecyclerView.getLayoutManager();
+                layoutManager.setSpanCount(spanCount);
+                layoutManager.requestLayout();
+            });*/
 
         }
 
@@ -533,13 +546,21 @@ public class HomeFragment extends Fragment {
         @NonNull
         @Override
         public HashtagViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            return new HashtagViewHolder(LayoutInflater.from(parent.getContext()).inflate(R.layout.viewholder_hashtag, parent, false));;
+            return new HashtagViewHolder(LayoutInflater.from(parent.getContext()).inflate(R.layout.viewholder_hashtag, parent, false));
         }
 
         @Override
         public void onBindViewHolder(@NonNull HashtagViewHolder holder, int position) {
 
             holder.hashTagTextView.setText("#"+lista.get(position).toString());
+
+            holder.hashTagTextView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    appViewModel.currentHashtag = lista.get(holder.getAdapterPosition());
+                    navController.navigate(R.id.hashtagSearchFragment);
+                }
+            });
         }
 
         @Override

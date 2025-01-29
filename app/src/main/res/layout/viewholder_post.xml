@@ -98,7 +98,9 @@
                 android:id="@+id/recyclerViewHashtags"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"/>
+                app:layoutManager="androidx.recyclerview.widget.StaggeredGridLayoutManager"
+                android:orientation="horizontal"
+                app:spanCount="2"/>
             <TextView
                 android:id="@+id/timeTextView"
                 style="@style/Base.TextAppearance.AppCompat.Small"
