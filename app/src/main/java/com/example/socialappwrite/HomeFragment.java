@@ -9,6 +9,7 @@ import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
@@ -83,6 +84,10 @@ public class HomeFragment extends Fragment {
 
         navController = Navigation.findNavController(view);  // <-----------------
         appViewModel = new ViewModelProvider(requireActivity()).get(AppViewModel.class);
+
+        Toolbar toolbar = view.getRootView().findViewById(R.id.toolbar);
+
+        toolbar.setTitle("Publicaciones recientes");
 
         NavigationView navigationView = view.getRootView().findViewById(R.id.nav_view);
         View header = navigationView.getHeaderView(0);
