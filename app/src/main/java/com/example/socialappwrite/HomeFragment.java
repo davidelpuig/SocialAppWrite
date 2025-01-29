@@ -27,6 +27,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
+import com.google.android.flexbox.FlexboxLayout;
 import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.snackbar.Snackbar;
 
@@ -191,6 +192,7 @@ public class HomeFragment extends Fragment {
         TextView authorTextView, contentTextView, numLikesTextView, timeTextView, replyButton, originalAuthorNameTextView;
         RecyclerView commentsRecyclerView, hashtagsRecyclerView;
         View originalAuthorInfo;
+        FlexboxLayout hashtagsFlexLayout;
 
         PostsAdapter commentsAdapter;
 
@@ -210,7 +212,8 @@ public class HomeFragment extends Fragment {
             timeTextView = itemView.findViewById(R.id.timeTextView);
             originalAuthorNameTextView = itemView.findViewById(R.id.originalAuthorTextView);
             commentsRecyclerView = itemView.findViewById(R.id.commentsRecyclerView);
-            hashtagsRecyclerView = itemView.findViewById(R.id.recyclerViewHashtags);
+            //hashtagsRecyclerView = itemView.findViewById(R.id.recyclerViewHashtags);
+            hashtagsFlexLayout = itemView.findViewById(R.id.hashtagsFlexboxLayout);
             replyButton = itemView.findViewById(R.id.replyButton);
             originalAuthorInfo = itemView.findViewById(R.id.originalAuthorInfo);
 
@@ -505,16 +508,42 @@ public class HomeFragment extends Fragment {
             });
 
             // Hashtags
-            HashtagsAdapter hashtagsAdapter = new HashtagsAdapter();
+            /*HashtagsAdapter hashtagsAdapter = new HashtagsAdapter();
             hashtagsAdapter.establecerLista((List<String>)post.get("hashtags"));
-            holder.hashtagsRecyclerView.setAdapter(hashtagsAdapter);
+            holder.hashtagsRecyclerView.setAdapter(hashtagsAdapter);*/
             /*holder.hashtagsRecyclerView.post(() -> {
                 int spanCount = Math.max(1, holder.hashtagsRecyclerView.getWidth() / 200); // Ajustar según tamaño deseado
                 StaggeredGridLayoutManager layoutManager = (StaggeredGridLayoutManager) holder.hashtagsRecyclerView.getLayoutManager();
                 layoutManager.setSpanCount(spanCount);
                 layoutManager.requestLayout();
             });*/
+            List<String> lista = (List<String>)post.get("hashtags");
 
+            holder.hashtagsFlexLayout.removeAllViews();
+
+            for (String text : lista) {
+                TextView textView = new TextView(getContext());
+                FlexboxLayout.LayoutParams params = new FlexboxLayout.LayoutParams(
+                        FlexboxLayout.LayoutParams.WRAP_CONTENT,
+                        FlexboxLayout.LayoutParams.WRAP_CONTENT
+                );
+                params.setMargins(0, 0, 8, 0);
+                textView.setLayoutParams(params);
+                textView.setTextSize(16f);
+                textView.setTextColor(getResources().getColor(R.color.purple_700));
+                textView.setText("#"+text);
+                textView.setPadding(8, 8, 8, 8);
+                //textView.setBackgroundResource(android.R.color.holo_blue_light);
+                textView.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        appViewModel.currentHashtag = ((TextView)v).getText().toString().substring(1);
+                        navController.navigate(R.id.hashtagSearchFragment);
+                    }
+                });
+
+                holder.hashtagsFlexLayout.addView(textView);
+            }
         }
 
         @Override

@@ -94,13 +94,23 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="5dp"
                 android:text="Contenido"/>
-            <androidx.recyclerview.widget.RecyclerView
+            <!--androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyclerViewHashtags"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:layoutManager="androidx.recyclerview.widget.StaggeredGridLayoutManager"
                 android:orientation="horizontal"
-                app:spanCount="2"/>
+                app:spanCount="2"/-->
+            <com.google.android.flexbox.FlexboxLayout
+                xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:app="http://schemas.android.com/apk/res-auto"
+                android:id="@+id/hashtagsFlexboxLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:flexWrap="wrap"
+                app:alignItems="center"
+                app:justifyContent="flex_start"
+                android:padding="8dp"/>
             <TextView
                 android:id="@+id/timeTextView"
                 style="@style/Base.TextAppearance.AppCompat.Small"
