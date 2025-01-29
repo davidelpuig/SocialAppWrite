@@ -559,7 +559,7 @@ public class HomeFragment extends Fragment {
 
     }
 
-    class HashtagViewHolder extends RecyclerView.ViewHolder {
+    /*class HashtagViewHolder extends RecyclerView.ViewHolder {
 
         TextView hashTagTextView;
         public HashtagViewHolder(@NonNull View itemView) {
@@ -601,6 +601,6 @@ public class HomeFragment extends Fragment {
             this.lista = lista;
             notifyDataSetChanged();
         }
-    }
+    }*/
 
 }
