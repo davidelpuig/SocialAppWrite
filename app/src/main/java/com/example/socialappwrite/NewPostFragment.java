@@ -202,8 +202,59 @@ public class NewPostFragment extends Fragment {
                             System.out.println("Post creado:" + result.toString());
                             mainHandler.post(() ->
                             {
-                                navController.popBackStack();
-                                appViewModel.setMediaSeleccionado(null, null);
+                                if(appViewModel.parentPostId == null) {
+                                    navController.popBackStack();
+                                    appViewModel.setMediaSeleccionado(null, null);
+                                }
+                                else
+                                {
+                                    createNotification(appViewModel.parentPostAuthorId, appViewModel.parentPostId, userPhotoUrl,
+                                            user.getName().toString()+" ha comentado tu publicación: \""+content+"\"");
+                                }
+                            });
+                        }
+
+                    })
+            );
+        } catch (AppwriteException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    void createNotification(String receiverId, String postId, String authorPhotoUrl, String text)
+    {
+        Handler mainHandler = new Handler(Looper.getMainLooper());
+
+        // Crear instancia del servicio Databases
+        Databases databases = new Databases(client);
+
+        // Datos del documento
+        Map<String, Object> data = new HashMap<>();
+        data.put("receiverId", receiverId);
+        data.put("authorPhotoUrl", authorPhotoUrl);
+        data.put("text", text);
+        data.put("timeStamp", Calendar.getInstance().getTimeInMillis());
+        data.put("postId", postId);
+
+        // Crear el documento
+        try {
+            databases.createDocument(
+                    getString(R.string.APPWRITE_DATABASE_ID), // databaseId
+                    getString(R.string.APPWRITE_NOTIFICATIONS_COLLECTION_ID), // collectionId
+                    "unique()", // Usa 'unique()' para generar un ID único automáticamente
+                    data,
+                    new ArrayList<>(), // Permisos opcionales, como ["role:all"]
+                    new CoroutineCallback<>((result, error) -> {
+                        if (error != null) {
+                            Snackbar.make(requireView(), "Error: " + error.toString(), Snackbar.LENGTH_LONG).show();
+                        }
+                        else
+                        {
+                            System.out.println("Notificación creada:" + result.toString());
+                            mainHandler.post(() ->
+                            {
+                                    navController.popBackStack();
+                                    appViewModel.setMediaSeleccionado(null, null);
                             });
                         }
 

@@ -27,6 +27,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+
 import com.bumptech.glide.Glide;
 import com.google.android.flexbox.FlexboxLayout;
 import com.google.android.material.navigation.NavigationView;
@@ -356,6 +357,9 @@ public class HomeFragment extends Fragment {
                                 mainHandler.post(() -> {
                                     adapter.notifyItemChanged(position);
                                     notifyElementUpdate();
+
+                                    if(nuevosLikes.contains(userId))
+                                        notificacionLike(post.get("uid").toString(), post.get("$id").toString(), userPhotoUrl);
                                 });
                             })
                     );
@@ -386,6 +390,7 @@ public class HomeFragment extends Fragment {
                 @Override
                 public void onClick(View v) {
                     appViewModel.parentPostId = lista.getDocuments().get(holder.getAdapterPosition()).getId();
+                    appViewModel.parentPostAuthorId = lista.getDocuments().get(holder.getAdapterPosition()).getData().get("uid").toString();
                     navController.navigate(R.id.newPostFragment);
                 }
             });
@@ -563,6 +568,49 @@ public class HomeFragment extends Fragment {
         }
 
     }
+
+    void notificacionLike(String receiverId, String postId, String authorPhotoUrl)
+    {
+        Handler mainHandler = new Handler(Looper.getMainLooper());
+
+        // Crear instancia del servicio Databases
+        Databases databases = new Databases(client);
+
+        // Datos del documento
+        Map<String, Object> data = new HashMap<>();
+        data.put("receiverId", receiverId);
+        data.put("authorPhotoUrl", authorPhotoUrl);
+        data.put("text", "A "+userName+" le gusta tu publicación");
+        data.put("timeStamp", Calendar.getInstance().getTimeInMillis());
+        data.put("postId", postId);
+
+        // Crear el documento
+        try {
+            databases.createDocument(
+                    getString(R.string.APPWRITE_DATABASE_ID), // databaseId
+                    getString(R.string.APPWRITE_NOTIFICATIONS_COLLECTION_ID), // collectionId
+                    "unique()", // Usa 'unique()' para generar un ID único automáticamente
+                    data,
+                    new ArrayList<>(), // Permisos opcionales, como ["role:all"]
+                    new CoroutineCallback<>((result, error) -> {
+                        if (error != null) {
+                            Snackbar.make(requireView(), "Error: " + error.toString(), Snackbar.LENGTH_LONG).show();
+                        }
+                        else
+                        {
+                            System.out.println("Notificación creada:" + result.toString());
+                            mainHandler.post(() ->
+                            {
+                            });
+                        }
+
+                    })
+            );
+        } catch (AppwriteException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 
     /*class HashtagViewHolder extends RecyclerView.ViewHolder {
 
